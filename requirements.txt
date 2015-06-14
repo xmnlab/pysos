@@ -4,3 +4,4 @@ flask-babel
 flask-sqlalchemy
 flask-login
 flask-admin
+flask-zurb-foundation

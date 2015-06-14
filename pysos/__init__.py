@@ -1,3 +1,10 @@
+"""
+# login
+:see: http://flask.pocoo.org/snippets/64/
+:see: https://github.com/flask-admin/flask-admin/blob/master/examples/
+      auth-flask-login/app.py
+
+"""
 from flask import (
     Flask, request, url_for, redirect, render_template,
     flash, session, g, abort
@@ -5,16 +12,15 @@ from flask import (
 from flask_babel import Babel, get_translations, refresh, gettext
 from flask_admin import Admin, AdminIndexView
 from flask_login import LoginManager
-from flask_zurb_foundation import Foundation
 
-import flask_admin as admin
+import flask_admin
 
 # internal
 from .database import db_session
 # models
 from .apps.attendant.models import Attendant
 # views
-from .apps.admin.views import LoginForm, AdminView
+from .apps.admin.views import LoginForm, PySOSAdminView
 from .apps.attendant.views import AttendantView
 from .apps.client.views import ClientView
 from .apps.device_model.views import DeviceModelView
@@ -45,12 +51,11 @@ babel = Babel(app, default_locale='pt')
 
 refresh()
 
-# login
 login_manager = LoginManager()
 login_manager.init_app(app)
 
 # admin
-admin = admin.Admin(app, 'PySOS')  # base_template='layout.html'
+admin = flask_admin.Admin(app, 'PySOS', index_view=PySOSAdminView())
 admin.add_view(AttendantView())
 admin.add_view(ClientView())
 admin.add_view(DeviceModelView())
@@ -58,9 +63,6 @@ admin.add_view(DeviceBrandView())
 admin.add_view(MobileOperatorView())
 admin.add_view(ServiceOrderStatusView())
 admin.add_view(ServiceOrderView())
-
-# foundation style
-Foundation(app)
 
 
 # Flask views
@@ -76,18 +78,17 @@ def shutdown_session(exception=None):
 
 @login_manager.user_loader
 def load_user(userid):
-    return Attendant.get(userid)
+    return db_session.query(Attendant).get(userid)
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """
-    :see: http://flask.pocoo.org/snippets/64/
     :return:
     """
     form = LoginForm()
     if form.validate_on_submit():
         flash(u'Successfully logged in as %s' % form.user.username)
-        session['user_id'] = form.user.id
-        return redirect(url_for('index'))
+        session['user_id'] = form.user.internal_id
+        return redirect('/admin/')
     return render_template('login.html', form=form)
