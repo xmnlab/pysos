@@ -1,0 +1,6 @@
+pymysql
+flask
+flask-babel
+flask-sqlalchemy
+flask-login
+flask-admin
